@@ -6,7 +6,7 @@ import torch
 trained_model = NFSPAgent.from_checkpoint(checkpoint=torch.load('saved_model.pt'))
 
 # get incoming state
-sample_state = {
+sample_state1 = {
   'legal_actions': OrderedDict([(1, None), (2, None), (3, None)]),
   'obs': np.array([1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 1., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0.]),
   'raw_obs': {
@@ -19,6 +19,14 @@ sample_state = {
   'action_record': [(1, 'raise'), (0, 'raise'), (1, 'raise'), (0, 'raise'), (1, 'call'), (0, 'check'), (1, 'raise'), (0, 'call'), (1, 'raise'), (0, 'call'), (1, 'raise'), (0, 'fold')]
 }
 
+sample_state2 = {
+  'legal_actions': OrderedDict([(1, None), (2, None), (3, None)]),
+  'raw_legal_actions': ['raise', 'fold', 'check'],
+  'obs': np.array([1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 1., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0.])
+}
+
 # send response
-action, info = trained_model.eval_step(sample_state)
+action, info = trained_model.eval_step(sample_state1)
+print(f'action: {action}\ninfo: {info}')
+action, info = trained_model.eval_step(sample_state2)
 print(f'action: {action}\ninfo: {info}')
