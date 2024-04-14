@@ -1,6 +1,7 @@
 import rlcard
 from rlcard.agents import NFSPAgent
 from rlcard.agents import RandomAgent
+from rlcard.models.limitholdem_rule_models import LimitholdemRuleAgentV1
 import torch
 import os
 import time
@@ -12,22 +13,39 @@ from rlcard.utils import (
 
 start_time = time.time()
 
-ntrain = 100001 # total training games to play
+ntrain = 40001 # total training games to play
 ntest = 1000 # how many testing games to play for performance evaluation
-testinterval = 1000 # how many training games to play before testing
-updateinterval = 2000 # how many training games to play before updating opponent
+testinterval = 1000 # how many training games to play between tests
+updateinterval = 2000 # how many training games to play between opponent updates
+transition = 0 # how many training games to play before switching to self-play
 
 # create environment
 current_dir = os.getcwd()
 env = rlcard.make('limit-holdem')
-training_agent = NFSPAgent(state_shape=[72], hidden_layers_sizes=[64,64], q_mlp_layers=[64,64], device=torch.device('cpu'), save_path=current_dir, save_every=1)
-opposing_agent = NFSPAgent(state_shape=[72], hidden_layers_sizes=[64,64], q_mlp_layers=[64,64], device=torch.device('cpu'), save_path=current_dir, save_every=1)
+# training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=30000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
+# opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=30000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
+
+# original layer sizes
+# training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[64, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[64, 64], q_replay_memory_size=30000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
+
+# for training vs rule bot and transitioning to self-play
+# opposing_agent = LimitholdemRuleAgentV1()
+
+# for resuming training from checkpoint
+checkpoint = torch.load('14kv3.pt')
+training_agent = NFSPAgent.from_checkpoint(checkpoint)
+opposing_agent = NFSPAgent.from_checkpoint(checkpoint)
+
 env.set_agents([training_agent, opposing_agent])
 
 # run experiments and log progress
 with Logger("results/") as logger:
     for episode in range(ntrain):
 
+        # select policy (best_response, average_policy)
+        training_agent.sample_episode_policy()
+        opposing_agent._mode = 'best_response'
+        
         # Generate data from the environment
         trajectories, payoffs = env.run(is_training=True)
 
@@ -46,7 +64,7 @@ with Logger("results/") as logger:
           env.set_agents([training_agent, opposing_agent])
         
         # set opposing agent equal to training agent
-        if episode % updateinterval == 0:
+        if episode >= transition and episode % updateinterval == 0:
           fname = 'temp/tempcheckpoint' + str(episode) + '.pt'
           training_agent.save_checkpoint(path=current_dir, filename=fname)
           checkpoint = torch.load(fname)
