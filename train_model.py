@@ -40,9 +40,9 @@ opposing_agent = NFSPAgent.from_checkpoint(checkpoint)
 env.set_agents([training_agent, opposing_agent])
 
 # run experiments and log progress
+training_start_time = time.time()
 with Logger("results/") as logger:
     for episode in range(ntrain):
-        training_start_time = time.time()
 
         # select policy (best_response, average_policy)
         training_agent.sample_episode_policy()
@@ -68,7 +68,7 @@ with Logger("results/") as logger:
         
         # set opposing agent equal to training agent
         if episode >= transition and episode % updateinterval == 0:
-          print(f'trained {updateinterval} episodes in {time.time() - training_start_time:.3f} seconds')
+          print(f'\ntrained {updateinterval} episodes in {time.time() - training_start_time:.3f} seconds')
           update_start_time = time.time()
           fname = 'temp/v4checkpoint' + str(episode) + '.pt'
           training_agent.save_checkpoint(path=current_dir, filename=fname)
@@ -78,6 +78,7 @@ with Logger("results/") as logger:
           if episode % checkpointinterval != 0:
              os.remove(fname)
           print(f'opponent updated in {time.time() - update_start_time:.3f} seconds')
+          training_start_time = time.time()
 
     # Get the paths
     csv_path, fig_path = logger.csv_path, logger.fig_path
