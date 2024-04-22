@@ -11,20 +11,20 @@ from rlcard.utils import (
   Logger,
 )
 
-start_time = time.time()
+total_start_time = time.time()
 
-ntrain = 250001 # total training games to play
+ntrain = 200001 # total training games to play
 ntest = 1000 # how many testing games to play for performance evaluation
 testinterval = 5000 # how many training games to play between tests
 updateinterval = 1000 # how many training games to play between opponent updates
-checkpointinterval = 10 * updateinterval # checkpoints at a multiple of this aren't deleted
+checkpointinterval = 50 * updateinterval # checkpoints at a multiple of this aren't deleted
 transition = 0 # how many training games to play before switching to self-play
 
 # create environment
 current_dir = os.getcwd()
 env = rlcard.make('limit-holdem')
-training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
-opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
+# training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
+# opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
 
 # original layer sizes
 # training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[64, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[64, 64], q_replay_memory_size=30000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
@@ -33,15 +33,16 @@ opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_sh
 # opposing_agent = LimitholdemRuleAgentV1()
 
 # for resuming training from checkpoint
-# checkpoint = torch.load('14kv3.pt')
-# training_agent = NFSPAgent.from_checkpoint(checkpoint)
-# opposing_agent = NFSPAgent.from_checkpoint(checkpoint)
+checkpoint = torch.load('450kv4.pt')
+training_agent = NFSPAgent.from_checkpoint(checkpoint)
+opposing_agent = NFSPAgent.from_checkpoint(checkpoint)
 
 env.set_agents([training_agent, opposing_agent])
 
 # run experiments and log progress
 with Logger("results/") as logger:
     for episode in range(ntrain):
+        training_start_time = time.time()
 
         # select policy (best_response, average_policy)
         training_agent.sample_episode_policy()
@@ -57,16 +58,18 @@ with Logger("results/") as logger:
         for ts in trajectories[0]:
           training_agent.feed(ts)
 
-        # evaluate performance against rule agent
+        # evaluate performance against random agent
         if episode % testinterval == 0:
-          control_agent = LimitholdemRuleAgentV1()
-          # control_agent = RandomAgent(num_actions=env.num_actions)
+          # control_agent = LimitholdemRuleAgentV1()
+          control_agent = RandomAgent(num_actions=env.num_actions)
           env.set_agents([training_agent, control_agent])
           logger.log_performance(episode, tournament(env, ntest)[0])
           env.set_agents([training_agent, opposing_agent])
         
         # set opposing agent equal to training agent
         if episode >= transition and episode % updateinterval == 0:
+          print(f'trained {updateinterval} episodes in {time.time() - training_start_time:.3f} seconds')
+          update_start_time = time.time()
           fname = 'temp/v4checkpoint' + str(episode) + '.pt'
           training_agent.save_checkpoint(path=current_dir, filename=fname)
           checkpoint = torch.load(fname)
@@ -74,6 +77,7 @@ with Logger("results/") as logger:
           env.set_agents([training_agent, opposing_agent])
           if episode % checkpointinterval != 0:
              os.remove(fname)
+          print(f'opponent updated in {time.time() - update_start_time:.3f} seconds')
 
     # Get the paths
     csv_path, fig_path = logger.csv_path, logger.fig_path
@@ -81,4 +85,4 @@ with Logger("results/") as logger:
     print('\ncsv_path:', csv_path, '\nfig_path:', fig_path)
     training_agent.save_checkpoint(path=current_dir, filename='trained_rename_me.pt')
 
-print(f'finished in {time.time() - start_time:.3f} seconds')
+print(f'finished in {time.time() - total_start_time:.3f} seconds')
