@@ -87,7 +87,7 @@ with Logger("results/") as logger:
           training_start_time = time.time()
 
         # occasionally create a checkpoint
-        if episode % updateinterval == 0:
+        if episode % checkpointinterval == 0:
           # check on training_agent vs opposing_agent performance
           train_vs_opp = tournament(env, ntest)[0]
           print(f'\ntraining vs opposing: {train_vs_opp:.3f}')
