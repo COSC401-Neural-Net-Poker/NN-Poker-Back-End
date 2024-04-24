@@ -6,6 +6,7 @@ import torch
 import os
 import time
 from rlcard.utils import (
+  get_device,
   tournament,
   reorganize,
   Logger,
@@ -13,7 +14,7 @@ from rlcard.utils import (
 
 total_start_time = time.time()
 
-ntrain = 250001 # total training games to play
+ntrain = 1500001 # total training games to play
 ntest = 1000 # how many testing games to play for performance evaluation
 testinterval = 50000 # how many training games to play between tests
 updateinterval = 1000 # how many training games to play between opponent updates
@@ -23,8 +24,8 @@ transition = 0 # how many training games to play before switching to self-play
 # create environment
 current_dir = os.getcwd()
 env = rlcard.make('limit-holdem')
-training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
-opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
+training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cuda:0'), save_path=current_dir, save_every=testinterval)
+opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cuda:0'), save_path=current_dir, save_every=testinterval)
 
 # original layer sizes
 # training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[64, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[64, 64], q_replay_memory_size=30000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
@@ -33,10 +34,12 @@ opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_sh
 # opposing_agent = LimitholdemRuleAgentV1()
 
 # for resuming training from checkpoint
-# checkpoint = torch.load('1000kv4.pt')
-# training_agent = NFSPAgent.from_checkpoint(checkpoint)
-# opposing_agent = NFSPAgent.from_checkpoint(checkpoint)
+checkpointt = torch.load('250kv5t.pt')
+checkpointo = torch.load('250kv5o.pt')
+# training_agent = NFSPAgent.from_checkpoint(checkpointt)
+# opposing_agent = NFSPAgent.from_checkpoint(checkpointo)
 
+print(f'using {training_agent.device}')
 env.set_agents([training_agent, opposing_agent])
 
 # run experiments and log progress
