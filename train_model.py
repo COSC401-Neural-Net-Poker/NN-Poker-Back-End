@@ -13,7 +13,7 @@ from rlcard.utils import (
 
 total_start_time = time.time()
 
-ntrain = 500001 # total training games to play
+ntrain = 250001 # total training games to play
 ntest = 1000 # how many testing games to play for performance evaluation
 testinterval = 50000 # how many training games to play between tests
 updateinterval = 1000 # how many training games to play between opponent updates
@@ -74,7 +74,7 @@ with Logger("results/") as logger:
         # DISABLED
         # set opposing agent equal to training agent
         if episode >= transition and episode % updateinterval == 0 and 0:
-          print(f'\ntrained {updateinterval} episodes in {time.time() - training_start_time:.3f} seconds')
+          print(f'\ntrained {updateinterval} episodes in {time.time() - training_start_time:.3f} seconds. episode: {episode}')
           update_start_time = time.time()
           fname = 'temp/v4checkpoint' + str(episode) + '.pt'
           training_agent.save_checkpoint(path=current_dir, filename=fname)
@@ -92,15 +92,18 @@ with Logger("results/") as logger:
           train_vs_opp = tournament(env, ntest)[0]
           print(f'\ntraining vs opposing: {train_vs_opp:.3f}')
           update_start_time = time.time()
-          fname = 'temp/v5checkpoint' + str(episode) + '.pt'
-          training_agent.save_checkpoint(path=current_dir, filename=fname)
-          print(f'checkpoint created in {time.time() - update_start_time:.3f} seconds')
+          tfname = 'temp/v5tcp' + str(episode) + '.pt'
+          ofname = 'temp/v5ocp' + str(episode) + '.pt'
+          training_agent.save_checkpoint(path=current_dir, filename=tfname)
+          opposing_agent.save_checkpoint(path=current_dir, filename=ofname)
+          print(f'checkpoints created in {time.time() - update_start_time:.3f} seconds')
 
 
     # Get the paths
-    csv_path, fig_path = logger.csv_path, logger.fig_path
+    csv_path, fig_path = logger.csv_path, logger.fig_path 
 
     print('\ncsv_path:', csv_path, '\nfig_path:', fig_path)
-    training_agent.save_checkpoint(path=current_dir, filename='trained_rename_me.pt')
+    training_agent.save_checkpoint(path=current_dir, filename='trained_t_rename_me.pt')
+    opposing_agent.save_checkpoint(path=current_dir, filename='trained_o_rename_me.pt')
 
 print(f'finished in {time.time() - total_start_time:.3f} seconds')
