@@ -14,7 +14,7 @@ from rlcard.utils import (
 
 total_start_time = time.time()
 
-ntrain = 1500001 # total training games to play
+ntrain = 6000001 # total training games to play
 ntest = 1000 # how many testing games to play for performance evaluation
 testinterval = 50000 # how many training games to play between tests
 updateinterval = 1000 # how many training games to play between opponent updates
@@ -24,8 +24,8 @@ transition = 0 # how many training games to play before switching to self-play
 # create environment
 current_dir = os.getcwd()
 env = rlcard.make('limit-holdem')
-training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cuda:0'), save_path=current_dir, save_every=testinterval)
-opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[128, 64, 128, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[128, 64, 128, 64], q_replay_memory_size=3000000, device=torch.device('cuda:0'), save_path=current_dir, save_every=testinterval)
+training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[1024, 512, 1024, 512], reservoir_buffer_capacity=30000000, batch_size=256, train_every=256, sl_learning_rate=0.01, q_mlp_layers=[1024, 512, 1024, 512], q_replay_memory_size=600000, q_replay_memory_init_size=256, q_epsilon_start=0.08, q_epsilon_end=0, q_epsilon_decay_steps=int(1e6), q_batch_size=256, q_train_every=256, evaluate_with='best_response', device=torch.device('cuda:0'), save_path=current_dir, save_every=testinterval)
+opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[1024, 512, 1024, 512], reservoir_buffer_capacity=30000000, batch_size=256, train_every=256, sl_learning_rate=0.01, q_mlp_layers=[1024, 512, 1024, 512], q_replay_memory_size=600000, q_replay_memory_init_size=256, q_epsilon_start=0.08, q_epsilon_end=0, q_epsilon_decay_steps=int(1e6), q_batch_size=256, q_train_every=256, evaluate_with='best_response', device=torch.device('cuda:0'), save_path=current_dir, save_every=testinterval)
 
 # original layer sizes
 # training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[64, 64], reservoir_buffer_capacity=600000, sl_learning_rate=0.01, q_mlp_layers=[64, 64], q_replay_memory_size=30000000, device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
@@ -34,8 +34,8 @@ opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_sh
 # opposing_agent = LimitholdemRuleAgentV1()
 
 # for resuming training from checkpoint
-checkpointt = torch.load('250kv5t.pt')
-checkpointo = torch.load('250kv5o.pt')
+# checkpointt = torch.load('250kv5t.pt')
+# checkpointo = torch.load('250kv5o.pt')
 # training_agent = NFSPAgent.from_checkpoint(checkpointt)
 # opposing_agent = NFSPAgent.from_checkpoint(checkpointo)
 
@@ -106,7 +106,7 @@ with Logger("results/") as logger:
     csv_path, fig_path = logger.csv_path, logger.fig_path 
 
     print('\ncsv_path:', csv_path, '\nfig_path:', fig_path)
-    training_agent.save_checkpoint(path=current_dir, filename='trained_t_rename_me.pt')
-    opposing_agent.save_checkpoint(path=current_dir, filename='trained_o_rename_me.pt')
+    training_agent.save_checkpoint(path=current_dir, filename='trained_t_rename_me_v7.pt')
+    opposing_agent.save_checkpoint(path=current_dir, filename='trained_o_rename_me_v7.pt')
 
 print(f'finished in {time.time() - total_start_time:.3f} seconds')
