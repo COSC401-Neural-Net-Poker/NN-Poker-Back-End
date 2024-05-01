@@ -15,18 +15,18 @@ from rlcard.utils import (
 total_start_time = time.time()
 
 # training parameters
-ntrain = 30000 # total training STEPS to play
+ntrain = 1500000 # total training STEPS to play
 ntest = 1000 # how many testing games to play for performance evaluation
 testinterval = 5000 # how many training games to play between tests
 checkpointinterval = 200000 # how many training games to play between creating checkpoints
 updateinterval = 1000 # how many training games to play between printing training rate
 
 # hyperparameters to test
-rl_learning_rate_list = [0.0005, 0.001]
-sl_learning_rate_list = [0.0001]
+rl_learning_rate_list = [0.00005]
+sl_learning_rate_list = [0.00005]
 q_replay_memory_init_size_list = [256]
-q_epsilon_start_list = [0.08]
-q_epsilon_decay_steps_list = [int(1e6)]
+q_epsilon_start_list = [0.1]
+q_epsilon_decay_steps_list = [int(1.25e6)]
 hyperparameter_combo_list = list(product(rl_learning_rate_list, sl_learning_rate_list, q_replay_memory_init_size_list, q_epsilon_start_list, q_epsilon_decay_steps_list))
 
 for combo_num in range(len(hyperparameter_combo_list)):
@@ -36,8 +36,8 @@ for combo_num in range(len(hyperparameter_combo_list)):
   # create environment
   current_dir = os.getcwd()
   env = rlcard.make('limit-holdem')
-  training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[1024, 512, 1024, 512], reservoir_buffer_capacity=30000000, batch_size=256, train_every=256, rl_learning_rate=hyperparameter_combo_list[combo_num][0], sl_learning_rate=hyperparameter_combo_list[combo_num][1], q_mlp_layers=[1024, 512, 1024, 512], q_replay_memory_size=600000, q_replay_memory_init_size=hyperparameter_combo_list[combo_num][2], q_epsilon_start=hyperparameter_combo_list[combo_num][3], q_epsilon_end=0, q_epsilon_decay_steps=hyperparameter_combo_list[combo_num][4], q_batch_size=256, q_train_every=256, evaluate_with='best_response', device=torch.device('cuda:0'), save_path=current_dir, save_every=testinterval)
-  opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[1024, 512, 1024, 512], reservoir_buffer_capacity=30000000, batch_size=256, train_every=256, rl_learning_rate=hyperparameter_combo_list[combo_num][0], sl_learning_rate=hyperparameter_combo_list[combo_num][1], q_mlp_layers=[1024, 512, 1024, 512], q_replay_memory_size=600000, q_replay_memory_init_size=hyperparameter_combo_list[combo_num][2], q_epsilon_start=hyperparameter_combo_list[combo_num][3], q_epsilon_end=0, q_epsilon_decay_steps=hyperparameter_combo_list[combo_num][4], q_batch_size=256, q_train_every=256, evaluate_with='best_response', device=torch.device('cuda:0'), save_path=current_dir, save_every=testinterval)
+  training_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[1024, 512, 1024, 512], reservoir_buffer_capacity=30000000, batch_size=256, train_every=256, rl_learning_rate=hyperparameter_combo_list[combo_num][0], sl_learning_rate=hyperparameter_combo_list[combo_num][1], q_mlp_layers=[1024, 512, 1024, 512], q_replay_memory_size=600000, q_replay_memory_init_size=hyperparameter_combo_list[combo_num][2], q_epsilon_start=hyperparameter_combo_list[combo_num][3], q_epsilon_end=0, q_epsilon_decay_steps=hyperparameter_combo_list[combo_num][4], q_batch_size=256, q_train_every=256, evaluate_with='best_response', device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
+  opposing_agent = NFSPAgent(num_actions=env.num_actions, state_shape=env.state_shape[0], hidden_layers_sizes=[1024, 512, 1024, 512], reservoir_buffer_capacity=30000000, batch_size=256, train_every=256, rl_learning_rate=hyperparameter_combo_list[combo_num][0], sl_learning_rate=hyperparameter_combo_list[combo_num][1], q_mlp_layers=[1024, 512, 1024, 512], q_replay_memory_size=600000, q_replay_memory_init_size=hyperparameter_combo_list[combo_num][2], q_epsilon_start=hyperparameter_combo_list[combo_num][3], q_epsilon_end=0, q_epsilon_decay_steps=hyperparameter_combo_list[combo_num][4], q_batch_size=256, q_train_every=256, evaluate_with='best_response', device=torch.device('cpu'), save_path=current_dir, save_every=testinterval)
 
   # for resuming training from checkpoints
   # checkpointt = torch.load('250kv5t.pt')
@@ -93,8 +93,8 @@ for combo_num in range(len(hyperparameter_combo_list)):
             # make checkpoints
             if episode != 0:
               update_start_time = time.time()
-              tfname = 'temp/v5tcp' + str(episode) + '.pt'
-              ofname = 'temp/v5ocp' + str(episode) + '.pt'
+              tfname = 'temp/v8tcp' + str(episode) + '.pt'
+              ofname = 'temp/v8ocp' + str(episode) + '.pt'
               training_agent.save_checkpoint(path=current_dir, filename=tfname)
               opposing_agent.save_checkpoint(path=current_dir, filename=ofname)
               print(f'checkpoints created in {time.time() - update_start_time:.3f} seconds')
@@ -104,8 +104,8 @@ for combo_num in range(len(hyperparameter_combo_list)):
       csv_path, fig_path = logger.csv_path, logger.fig_path
 
       print('\ncsv_path:', csv_path, '\nfig_path:', fig_path)
-      training_agent.save_checkpoint(path=current_dir, filename=f'trained_t_{combo_num}rename_me_v7.pt')
-      opposing_agent.save_checkpoint(path=current_dir, filename=f'trained_o_{combo_num}rename_me_v7.pt')
+      training_agent.save_checkpoint(path=current_dir, filename=f'trained_t_{combo_num}rename_me_v8.pt')
+      opposing_agent.save_checkpoint(path=current_dir, filename=f'trained_o_{combo_num}rename_me_v8.pt')
 
   subprocess.run(["python", "graphing.py", str(hyperparameter_combo_list[combo_num][0]), str(hyperparameter_combo_list[combo_num][1]), str(hyperparameter_combo_list[combo_num][2]), str(hyperparameter_combo_list[combo_num][3]), str(hyperparameter_combo_list[combo_num][4]), str(combo_num)])
   print(f'completed combo {combo_num} in {time.time() - combo_start_time:.3f} seconds')
