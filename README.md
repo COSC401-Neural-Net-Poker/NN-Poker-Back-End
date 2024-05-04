@@ -1,3 +1,3 @@
 Code for training/testing the model
 
-Some code adaptaed from the RLCard environment: https://github.com/datamllab/rlcard
+Some code adapted from the RLCard environment: https://github.com/datamllab/rlcard
